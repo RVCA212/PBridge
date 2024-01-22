@@ -2,6 +2,7 @@ import os
 import pinecone
 import tiktoken
 import hashlib
+from pinecone import Pinecone, ServerlessSpec
 from functools import reduce
 from apify import Actor
 from tqdm.auto import tqdm
@@ -52,7 +53,7 @@ async def main():
         for field in metadata_fields:
             metadata_fields[field] = get_nested_value(actor_input.get('resource'), metadata_fields[field])
 
-        
+
         # If you want to process data from Apify dataset before sending it to pinecone, do it here inside iterator function
         def document_iterator(dataset_item):
             m = hashlib.sha256()
@@ -68,7 +69,7 @@ async def main():
             dataset_mapping_function=document_iterator
         )
         print("Dataset loaded ")
-        
+
         # Cleaning data before intializing pinecone
         tiktoken_model_name = 'gpt-3.5-turbo'
         tiktoken.encoding_for_model(tiktoken_model_name)
@@ -107,31 +108,35 @@ async def main():
         #})
 
 
+        # Initialize Pinecone
         print("Initializing pinecone")
-        pinecone.init(
-            api_key=PINECONE_API_KEY,  # find at app.pinecone.io
-            environment=PINECONE_ENV  # next to api key in console
-        )
+        pc = Pinecone(api_key=PINECONE_API_KEY)  # replace with your actual Pinecone API key
         print("Pinecone initialized")
 
         index_name = actor_input.get("index_name")
 
         embeddings = OpenAIEmbeddings(
             model='text-embedding-ada-002',
-            openai_api_key=OPENAI_API_KEY
+            openai_api_key=OPENAI_API_KEY  # replace with your actual OpenAI API key
         )
         print(embeddings)
 
-        # First, check if our index already exists. If it doesn't, we create it
-        if index_name not in pinecone.list_indexes():
+        # Check if our index already exists. If it doesn't, we create it
+        existing_indexes = pc.list_indexes()
+        if index_name not in existing_indexes:
             print("Creating index")
-            # we create a new index
-            pinecone.create_index(
-            name=index_name,
-            metric='cosine',
-            dimension=1536
-        )
+            # Create a new serverless index
+            pc.create_index(
+                name=index_name,
+                dimension=1536,
+                metric='cosine',
+                spec=ServerlessSpec(
+                    cloud='aws',  # specify your cloud provider
+                    region='us-west-2'  # specify the region
+                )
+            )
 
-
+        # Add documents to the index
+        # Here you might need to adjust the code based on how you want to handle embeddings and document insertion
         Pinecone.from_documents(documents, embeddings, index_name=index_name)
         print("Documents added")
