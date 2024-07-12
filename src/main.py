@@ -38,6 +38,9 @@ async def main():
         PINECONE_ENV = actor_input.get('pinecone_env')
         OPENAI_API_KEY = actor_input.get('openai_token')
 
+        if not OPENAI_API_KEY:
+            raise ValueError("OpenAI API key is missing from the input")
+
         print("Loading dataset")
 
         # Get the request queue ID from the actor input
