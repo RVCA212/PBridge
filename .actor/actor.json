@@ -1,0 +1,12 @@
+{
+    "actorSpecification": 1,
+    "name": "pinecone-bridge",
+    "title": "Send data to Pinecone",
+    "description": "It will take content from web crawler and send data to Pinecone",
+    "version": "0.0",
+    "meta": {
+        "templateId": "python-start"
+    },
+    "input": "./input_schema.json",
+    "dockerfile": "./Dockerfile"
+}
