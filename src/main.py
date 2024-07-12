@@ -24,22 +24,18 @@ def get_nested_value(data_dict, keys_str):
 
 async def main():
     async with Actor:
-        # Get the value of the actor input
-        try:
-            actor_input = await Actor.get_input() or {}
-        except Exception as e:
-            print(f"Error getting actor input: {e}")
-            actor_input = {}
+        actor_input = await Actor.get_input() or {}
+        print(actor_input)
 
-        print("Actor input:", actor_input)
+        os.environ['OPENAI_API_KEY'] = actor_input.get('openai_token')
 
-        # Set up environment variables and configurations
-        OPENAI_API_KEY = actor_input.get('openai_token', '')
-        PINECONE_API_KEY = actor_input.get('pinecone_token', '')
-        PINECONE_ENV = actor_input.get('pinecone_env', '')
+        fields = actor_input.get('fields') or []
+        metadata_fields = actor_input.get('metadata_fields') or {}
+        metadata_values = actor_input.get('metadata_values') or {}
 
-        if not PINECONE_API_KEY or not OPENAI_API_KEY:
-            raise ValueError("Missing required API keys")
+        PINECONE_API_KEY = actor_input.get('pinecone_token')
+        PINECONE_ENV = actor_input.get('pinecone_env')
+        OPENAI_API_KEY = actor_input.get('openai_token')
 
         print("Loading dataset")
 
