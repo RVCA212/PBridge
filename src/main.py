@@ -38,7 +38,7 @@ async def main():
         PINECONE_API_KEY = actor_input.get('pinecone_token', '')
         PINECONE_ENV = actor_input.get('pinecone_env', '')
 
-        if not PINECONE_API_KEY or not OPENAI_API_KEY
+        if not PINECONE_API_KEY or not OPENAI_API_KEY:
             raise ValueError("Missing required API keys")
 
         print("Loading dataset")
