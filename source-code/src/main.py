@@ -1,18 +1,21 @@
 import os
-import pinecone
 import tiktoken
 import hashlib
-from pinecone import Pinecone, ServerlessSpec
+import time
 from functools import reduce
 from apify import Actor
 from tqdm.auto import tqdm
 from uuid import uuid4
 from getpass import getpass
-from langchain.document_loaders import ApifyDatasetLoader
+from pinecone import ServerlessSpec
+from langchain_community.document_loaders import ApifyDatasetLoader
 from langchain.docstore.document import Document
-from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.vectorstores import Pinecone
+from langchain_openai import OpenAIEmbeddings
+from langchain_community.vectorstores import Pinecone
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from pinecone import Pinecone as PineconeClient
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
+
 
 def get_nested_value(data_dict, keys_str):
     keys = keys_str.split('.')
@@ -52,8 +55,7 @@ async def main():
         # Iterator over metadata fields
         for field in metadata_fields:
             metadata_fields[field] = get_nested_value(actor_input.get('resource'), metadata_fields[field])
-
-
+        
         # If you want to process data from Apify dataset before sending it to pinecone, do it here inside iterator function
         def document_iterator(dataset_item):
             m = hashlib.sha256()
@@ -61,15 +63,14 @@ async def main():
             uid = m.hexdigest()[:12]
             return Document(
                 page_content=dataset_item['text'],
-                metadata={"source":dataset_item['url'],"id": uid}
+                metadata={"source": dataset_item['url'], "id": uid}
             )
 
         loader = ApifyDatasetLoader(
             dataset_id=actor_input.get('resource')['defaultDatasetId'],
             dataset_mapping_function=document_iterator
         )
-        print("Dataset loaded ")
-
+                
         # Cleaning data before intializing pinecone
         tiktoken_model_name = 'gpt-3.5-turbo'
         tiktoken.encoding_for_model(tiktoken_model_name)
@@ -79,24 +80,74 @@ async def main():
         def tiktoken_len(text):
             tokens = tokenizer.encode(
                 text,
-                disallowed_special=()
             )
             return len(tokens)
 
+        sparse_embed = FastEmbedEmbeddings(model_name:"prithivida/Splade_PP_en_v1")
+
         # Create text splitter based on length function
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=300,
-            chunk_overlap=20,
+        text_splitter1 = RecursiveCharacterTextSplitter(
+            chunk_size=8000,
+            chunk_overlap=25,
+            length_function=tiktoken_len,
+            separators=["\n\n", "\n", " ", ""]
+        )
+
+        bert_limit = 512
+        text_splitter2 = RecursiveCharacterTextSplitter(
+            chunk_size=bert_limit,
+            chunk_overlap=25,
             length_function=tiktoken_len,
             separators=["\n\n", "\n", " ", ""]
         )
 
 
-        print("Loading documents ")
+        # load documents from Apify
+        documents = loader.load()
+        print("docs loaded")
 
-        # load documents based on text splitter
-        documents = loader.load_and_split(text_splitter)
-        print("Documents loaded:", len(documents))
+        # Split documents into chunks
+
+        parent_child_documents = []
+        for doc_id, doc in enumerate(documents):
+            print(doc)
+            print(type(doc))
+            # First, split document into parent chunks
+            parent_chunks = text_splitter1.split_text(doc["text"])
+            for parent_id, parent_chunk in enumerate(parent_chunks):
+                # For each parent chunk, split further into child chunks
+                child_chunks = text_splitter2.split_text(parent_chunk)
+                for child_id, child_chunk in enumerate(child_chunks):
+                    # Append parent chunk (larger) and child chunk (smaller) together with metadata
+                    parent_child_documents.append(
+                        {
+                            "parent_content": parent_chunk,
+                            "child_content": child_chunk,
+                            "metadata": {
+                                "source": doc["url"],
+                                "doc_id": doc_id,
+                                "parent_id": f"{doc_id}-{parent_id}",
+                                "child_id": f"{doc_id}-{parent_id}-{child_id}"
+                            }
+                        }
+                    )
+
+            print("documents split successfully!")
+
+
+        encoder = OpenAIEmbeddings()
+        dense_model = encoder
+
+        print("dense model loaded")
+        
+
+        sparse_model_id = sparse_embed
+
+        print("sparse model loaded")
+
+
+
+        # Revised print statements to match the Document object structure
 
         # above loading is equivalent to following
         #    chunks = text_splitter.split_text(doc['page_content'])  # get page content from 'page_content' key
@@ -107,36 +158,99 @@ async def main():
         #            'source': url
         #})
 
-
-        # Initialize Pinecone
         print("Initializing pinecone")
-        pc = Pinecone(api_key=PINECONE_API_KEY)  # replace with your actual Pinecone API key
+        pc = PineconeClient(api_key=PINECONE_API_KEY)
         print("Pinecone initialized")
+        print(pc)
 
         index_name = actor_input.get("index_name")
+        namespace_name = actor_input.get("namespace_name")
 
-        embeddings = OpenAIEmbeddings(
-            model='text-embedding-ada-002',
-            openai_api_key=OPENAI_API_KEY  # replace with your actual OpenAI API key
-        )
-        print(embeddings)
+        spec = ServerlessSpec(cloud='aws', region='us-west-2')
 
         # Check if our index already exists. If it doesn't, we create it
-        existing_indexes = pc.list_indexes()
-        if index_name not in existing_indexes:
+        if index_name not in pc.list_indexes().names():
             print("Creating index")
-            # Create a new serverless index
+            # Create a new index
             pc.create_index(
-                name=index_name,
-                dimension=1536,
-                metric='cosine',
-                spec=ServerlessSpec(
-                    cloud='aws',  # specify your cloud provider
-                    region='us-west-2'  # specify the region
-                )
+                index_name,
+                dimension=768,
+                metric='dotproduct',
+                spec=spec
             )
+            # Wait for index to be initialized
+            while not pc.describe_index(index_name).status['ready']:
+                time.sleep(1)
+            print("Index created!")
+        else:
+            print("Index already exists, updating index.")
 
-        # Add documents to the index
-        # Here you might need to adjust the code based on how you want to handle embeddings and document insertion
-        Pinecone.from_documents(documents, embeddings, index_name=index_name)
-        print("Documents added")
+        index = pc.Index(index_name)
+
+        def builder(records: list):
+            # search is carried out via the smaller child content
+            child_contents = [x["child_content"] for x in records]
+
+            # create dense vecs
+            dense_vecs = dense_model.encode(child_contents).tolist()
+
+            # create sparse vecs
+            input_ids = tokenizer(
+                child_contents, return_tensors="pt",
+                padding=True, truncation=True
+            )
+            with torch.no_grad():
+                sparse_vecs = sparse_model(
+                    d_kwargs=input_ids.to(device)
+                )["d_rep"].squeeze()
+
+            # convert to upsert format
+            upserts = []
+
+            for record, dense_vec, sparse_vec in zip(records, dense_vecs, sparse_vecs):
+                _id = record["metadata"]["child_id"]
+                source = record["metadata"]["source"]
+                child_content = record["child_content"]
+                parent_content = record["parent_content"]
+
+                # extract columns where there are non-zero weights
+                indices = sparse_vec.nonzero().squeeze().cpu().tolist() # positions
+                values = sparse_vec[indices].cpu().tolist()             # weights/scores
+
+                # append all to upserts list as pinecone.Vector (or GRPCVector)
+                upserts.append({
+                    "id": _id,
+                    "values": dense_vec,
+                    "sparse_values": {
+                        "indices": indices,
+                        "values": values
+                    },
+                    "metadata": {
+                    "source": source,
+                    "child_content": child_content,
+                    "parent_content": parent_content
+                    }
+                })
+            return upserts
+
+
+        print("generating embeddings:", sparse_model_id)
+        # Generate embeddings and prepare documents for upserting
+
+
+        # there is a 2mb total batch upsert capacity -- keep batch_size < 100
+        batch_size = 60
+
+        def generate_and_upsert_documents(parent_child_documents, index, namespace_name):
+            document_batches = [parent_child_documents[i:i + batch_size] for i in range(0, len(parent_child_documents), batch_size)]
+            for batch in tqdm(document_batches):
+                try:
+                    index.upsert(vectors=builder(batch), namespace=namespace_name)
+                    time.sleep(0.5)
+                except Exception as e:
+                    print(f"Error during embedding or upserting: {e}")
+
+
+        # Upsert documents
+        await generate_and_upsert_documents(parent_child_documents, index, namespace_name)
+        print("Documents successfully upserted to Pinecone index")
