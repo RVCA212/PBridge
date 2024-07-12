@@ -51,7 +51,7 @@ async def main():
             m.update(dataset_item['url'].encode('utf-8'))
             uid = m.hexdigest()[:12]
             return Document(
-                page_content=dataset_item['text'],
+                page_content=dataset_item['markdown'],
                 metadata={"source": dataset_item['url'], "id": uid}
             )
 
@@ -81,7 +81,7 @@ async def main():
         bert_limit = 512
         text_splitter2 = RecursiveCharacterTextSplitter(
             chunk_size=bert_limit,
-            chunk_overlap=25,
+            chunk_overlap=35,
             length_function=tiktoken_len,
             separators=["\n\n", "\n", " ", ""]
         )
