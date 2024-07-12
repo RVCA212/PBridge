@@ -1,0 +1,65 @@
+{
+  "title": "Pinecone Bridge",
+  "type": "object",
+  "schemaVersion": 1,
+  "properties": {
+    "index_name": {
+      "title": "Pinecone index name",
+      "type": "string",
+      "description": "The pinecone index name.",
+      "editor": "textfield"
+    },
+    "namespace_name": {
+      "title": "Namespace",
+      "type": "string",
+      "description": "The pinecone index namespace.",
+      "editor": "textfield"
+    },
+    "pinecone_token": {
+      "title": "Pinecone token",
+      "description": "Pinecone token",
+      "type": "string",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "pinecone_env": {
+      "title": "Pinecone env",
+      "description": "Pinecone enviorment",
+      "type": "string",
+      "editor": "textfield",
+      "isSecret": false
+    },
+    "openai_token": {
+      "title": "OpenAI token",
+      "description": "OpenAI token",
+      "type": "string",
+      "editor": "textfield",
+      "isSecret": true
+    },
+    "fields": {
+      "title": "Fields",
+      "type": "array",
+      "description": "Select Dataset fields pushed to Pinecone (supports dot notation)",
+      "editor": "stringList"
+    },
+    "resource": {
+      "title": "Apify webhook resource",
+      "type": "object",
+      "description": "Apify webhook resource object",
+      "editor": "json"
+    },
+    "metadata_fields": {
+      "title": "Metadata fields",
+      "type": "object",
+      "description": "Select fields pushed to Pinecone as metadata (supports dot notation)",
+      "editor": "json"
+    },
+    "metadata_values": {
+      "title": "Metadata values",
+      "type": "object",
+      "description": "Custom values pushed to Pinecone for every Dataset item as metadata",
+      "editor": "json"
+    }
+  },
+  "required": ["index_name", "pinecone_token", "pinecone_env", "openai_token", "fields"]
+}
