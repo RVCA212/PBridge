@@ -32,15 +32,11 @@ async def main():
 
         print("Actor input:", actor_input)
 
-        # Extract necessary information from actor_input
+        os.environ['OPENAI_API_KEY'] = actor_input.get('openai_token')
+
         PINECONE_API_KEY = actor_input.get('pinecone_token')
         PINECONE_ENV = actor_input.get('pinecone_env')
         OPENAI_API_KEY = actor_input.get('openai_token')
-        
-        if not OPENAI_API_KEY:
-            raise ValueError("OpenAI API key is missing from the input")
-
-        os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 
         print("Loading dataset")
 
