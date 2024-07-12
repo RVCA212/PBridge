@@ -5,6 +5,7 @@ import time
 from apify import Actor
 from tqdm.auto import tqdm
 from pinecone import ServerlessSpec
+from langchain_community.document_loaders import ApifyDatasetLoader
 from langchain.docstore.document import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
@@ -23,36 +24,41 @@ def get_nested_value(data_dict, keys_str):
 
 async def main():
     async with Actor:
-        # Get the value of the actor input
         actor_input = await Actor.get_input() or {}
-        print("Actor input:", actor_input)
+        print(actor_input)
 
-        # Extract necessary information from actor_input
+        os.environ['OPENAI_API_KEY'] = actor_input.get('openai_token')
+
+        fields = actor_input.get('fields') or []
+        metadata_fields = actor_input.get('metadata_fields') or {}
+        metadata_values = actor_input.get('metadata_values') or {}
+
         PINECONE_API_KEY = actor_input.get('pinecone_token')
         PINECONE_ENV = actor_input.get('pinecone_env')
         OPENAI_API_KEY = actor_input.get('openai_token')
-        
-        os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 
         print("Loading dataset")
 
-        # Assuming the actor_input contains the scraped data directly
-        scraped_data = actor_input.get('resource', [])
-        
-        documents = []
-        for item in scraped_data:
+        # Define document iterator to match your scraped data structure
+        def document_iterator(dataset_item):
             m = hashlib.sha256()
-            m.update(item['url'].encode('utf-8'))
+            m.update(dataset_item['url'].encode('utf-8'))
             uid = m.hexdigest()[:12]
-            documents.append(Document(
-                page_content=item['markdown'],
+            return Document(
+                page_content=dataset_item['markdown'],
                 metadata={
-                    "source": item['url'],
+                    "source": dataset_item['url'],
                     "id": uid,
-                    **item['metadata']
+                    **dataset_item['metadata']
                 }
-            ))
+            )
 
+        # Load documents from Apify dataset
+        loader = ApifyDatasetLoader(
+            dataset_id=actor_input.get('resource', {}).get('defaultRequestQueueId'),
+            dataset_mapping_function=document_iterator
+        )
+        documents = loader.load()
         print(f"Loaded {len(documents)} documents")
 
         # Set up text splitters
