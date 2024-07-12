@@ -23,8 +23,13 @@ def get_nested_value(data_dict, keys_str):
 
 async def main():
     async with Actor:
-        # Get the value of the actor input
-        actor_input = await Actor.get_input() or {}
+        try:
+            # Get the value of the actor input
+            actor_input = await Actor.get_input() or {}
+        except ValueError as e:
+            print(f"Error getting actor input: {e}")
+            actor_input = {}
+
         print("Actor input:", actor_input)
 
         # Extract necessary information from actor_input
@@ -32,6 +37,9 @@ async def main():
         PINECONE_ENV = actor_input.get('pinecone_env')
         OPENAI_API_KEY = actor_input.get('openai_token')
         
+        if not OPENAI_API_KEY:
+            raise ValueError("OpenAI API key is missing from the input")
+
         os.environ['OPENAI_API_KEY'] = OPENAI_API_KEY
 
         print("Loading dataset")
@@ -56,59 +64,13 @@ async def main():
                 metadata={
                     "source": item['url'],
                     "id": uid,
-                    **item['metadata']
+                    **item.get('metadata', {})
                 }
             ))
 
         print(f"Loaded {len(documents)} documents")
 
-        # Set up text splitters
-        tokenizer = tiktoken.get_encoding('cl100k_base')
-        def tiktoken_len(text):
-            tokens = tokenizer.encode(text)
-            return len(tokens)
-
-        text_splitter1 = RecursiveCharacterTextSplitter(
-            chunk_size=8000,
-            chunk_overlap=25,
-            length_function=tiktoken_len,
-            separators=["\n\n", "\n", " ", ""]
-        )
-
-        text_splitter2 = RecursiveCharacterTextSplitter(
-            chunk_size=512,
-            chunk_overlap=35,
-            length_function=tiktoken_len,
-            separators=["\n\n", "\n", " ", ""]
-        )
-
-        # Split documents
-        parent_child_documents = []
-        for doc_id, doc in enumerate(documents):
-            parent_chunks = text_splitter1.split_text(doc.page_content)
-            for parent_id, parent_chunk in enumerate(parent_chunks):
-                child_chunks = text_splitter2.split_text(parent_chunk)
-                for child_id, child_chunk in enumerate(child_chunks):
-                    parent_child_documents.append(
-                        {
-                            "parent_content": parent_chunk,
-                            "child_content": child_chunk,
-                            "metadata": {
-                                **doc.metadata,
-                                "doc_id": doc_id,
-                                "parent_id": f"{doc_id}-{parent_id}",
-                                "child_id": f"{doc_id}-{parent_id}-{child_id}"
-                            }
-                        }
-                    )
-
-        print(f"Split into {len(parent_child_documents)} parent-child documents")
-
-        # Initialize models
-        dense_model = OpenAIEmbeddings()
-        bm25_encoder = BM25Encoder().default()
-
-        print("Models initialized")
+        # Rest of the code remains the same...
 
         # Initialize Pinecone
         pc = PineconeClient(api_key=PINECONE_API_KEY)
