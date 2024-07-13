@@ -16,6 +16,7 @@ from pinecone import Pinecone as PineconeClient
 from pinecone_text.sparse import SpladeEncoder
 from sentence_transformers import SentenceTransformer
 from transformers import AutoTokenizer
+import torch
 
 
 def get_nested_value(data_dict, keys_str):
