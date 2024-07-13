@@ -11,18 +11,18 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pinecone import Pinecone as PineconeClient
 from pinecone_text.sparse import BM25Encoder
 
-def get_nested_value(data_dict, keys_str):
-    keys = keys_str.split('.')
-    result = data_dict
+# def get_nested_value(data_dict, keys_str):
+#     keys = keys_str.split('.')
+#     result = data_dict
 
-    for key in keys:
-        if key in result:
-            result = result[key]
-        else:
-            # If any of the keys are not found, return None
-            return None
+#     for key in keys:
+#         if key in result:
+#             result = result[key]
+#         else:
+#             # If any of the keys are not found, return None
+#             return None
 
-    return result
+#     return result
 
 
 async def main():
