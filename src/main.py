@@ -62,12 +62,19 @@ async def main():
             m.update(dataset_item['url'].encode('utf-8'))
             uid = m.hexdigest()[:12]
             return Document(
-                page_content=dataset_item['markdown'],
+                page_content=dataset_item['text'],
                 metadata={"source": dataset_item['url'], "id": uid}
             )
 
+        resource = actor_input.get('resource', {})
+        dataset_id = resource.get('defaultDatasetId')
+
+        if not dataset_id:
+            print("Error: dataset_id is None")
+            return
+
         loader = ApifyDatasetLoader(
-            dataset_id=actor_input.get('resource')['defaultDatasetId'],
+            dataset_id=dataset_id,
             dataset_mapping_function=document_iterator
         )
                 
