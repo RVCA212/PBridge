@@ -165,7 +165,7 @@ async def main():
                         "sparse_values": sparse_vec,
                         "metadata": {
                             **record["metadata"],
-                            "source": source,
+                            "source": doc.metadata["source"],
                             "context": record["context"],
                             "parent_content": record["parent_content"]
                         }
