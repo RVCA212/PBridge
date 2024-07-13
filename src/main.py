@@ -62,7 +62,7 @@ async def main():
             m.update(dataset_item['url'].encode('utf-8'))
             uid = m.hexdigest()[:12]
             return Document(
-                page_content=dataset_item['text'],
+                page_content=dataset_item['markdown'],
                 metadata={"source": dataset_item['url'], "id": uid}
             )
 
