@@ -1,7 +1,9 @@
 FROM apify/actor-python:3.11
 
-# Install git if it's not available
-RUN apt-get update && apt-get install -y git
+# Install git and rust if they are not available
+RUN apt-get update && apt-get install -y git curl \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && source $HOME/.cargo/env
 
 # Second, copy just requirements.txt into the actor image,
 # since it should be the only file that affects the dependency install in the next step,
@@ -16,6 +18,7 @@ RUN echo "Python version:" \
  && echo "Pip version:" \
  && pip --version \
  && echo "Installing dependencies:" \
+ && pip install --upgrade pip \
  && pip install -r requirements.txt \
  && echo "All installed Python packages:" \
  && pip freeze
