@@ -19,9 +19,10 @@ h11==0.14.0
 httpcore==0.16.3
 httpx==0.24.1
 idna==3.4
-langchain==0.1.9
-langchain-community==0.0.34
-langchain-openai==0.0.8
+langchain==0.2.7
+langchain-community==0.2.7
+langchain-core==0.2.17
+langchain-openai==0.1.16
 loguru>=0.7.2,<0.8.0
 marshmallow==3.19.0
 marshmallow-enum==1.5.1
@@ -29,7 +30,7 @@ multidict==6.0.4
 mypy-extensions==1.0.0
 numexpr==2.8.4
 numpy==1.24.3
-openai==1.12.0
+openai==1.35.13
 openapi-schema-pydantic==1.2.4
 packaging>=23.2,<24.0
 pinecone-client==3.0.0
