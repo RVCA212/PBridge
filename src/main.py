@@ -37,7 +37,7 @@ async def main():
         # Get the value of the actor input
         actor_input = await Actor.get_input() or {}
 
-        print(actor_input)
+        print("Actor Input:", actor_input)
 
         os.environ['OPENAI_API_KEY'] = actor_input.get('openai_token')
 
@@ -67,6 +67,7 @@ async def main():
             )
 
         resource = actor_input.get('resource', {})
+        print("Resource:", resource)
         dataset_id = resource.get('defaultDatasetId')
 
         if not dataset_id:
