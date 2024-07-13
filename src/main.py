@@ -27,13 +27,14 @@ def get_nested_value(data_dict, keys_str):
 
 async def main():
     async with Actor:
-
-        # Get the value of the actor input
-        actor_input = await Actor.get_input() or {}
+        actor_input: dict = await Actor.get_input() or {}
+        Actor.log.info(actor_input)
 
         print("Actor Input:", actor_input)
 
-        os.environ['OPENAI_API_KEY'] = actor_input.get('openai_token')
+        OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
+
+        PINECONE_API_KEY = os.environ['OPENAI_API_KEY']
 
 
         fields = actor_input.get('fields') or []
