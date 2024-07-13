@@ -66,16 +66,8 @@ async def main():
                 metadata={"source": dataset_item['url'], "id": uid}
             )
 
-        resource = actor_input.get('resource', {})
-        print("Resource:", resource)
-        dataset_id = resource.get('defaultDatasetId')
-
-        if not dataset_id:
-            print("Error: dataset_id is None")
-            return
-
         loader = ApifyDatasetLoader(
-            dataset_id=dataset_id,
+            dataset_id=actor_input.get('resource')['defaultDatasetId'],
             dataset_mapping_function=document_iterator
         )
                 
