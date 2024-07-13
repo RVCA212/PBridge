@@ -10,11 +10,11 @@ from getpass import getpass
 from pinecone import ServerlessSpec
 from langchain_community.document_loaders import ApifyDatasetLoader
 from langchain_core.documents import Document
-from langchain_openai import OpenAIEmbeddings
 from langchain_community.vectorstores import Pinecone
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pinecone import Pinecone as PineconeClient
 from pinecone_text.sparse import SpladeEncoder
+from sentence_transformers import SentenceTransformer
 
 
 def get_nested_value(data_dict, keys_str):
@@ -133,9 +133,7 @@ async def main():
 
             print("documents split successfully!")
 
-
-        encoder = OpenAIEmbeddings()
-        dense_model = encoder
+        dense_model = SentenceTransformer("msmarco-bert-base-dot-v5")
 
         print("dense model loaded")
         
