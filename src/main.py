@@ -141,7 +141,7 @@ async def main():
         splade = SpladeEncoder()
         sparse_model_id = splade
 
-        tokenizer = AutoTokenizer.from_pretrained(sparse_model_id)
+        tokenizer = AutoTokenizer.from_pretrained("naver/splade-cocondenser-ensembledistil")
 
         print("sparse model loaded")
 
