@@ -40,10 +40,7 @@ async def main():
         fields = actor_input.get('fields') or []
         metadata_fields = actor_input.get('metadata_fields') or {}
         metadata_values = actor_input.get('metadata_values') or {}
-
-        PINECONE_API_KEY = actor_input.get('pinecone_token')
         PINECONE_ENV = actor_input.get('pinecone_env')
-        OPENAI_API_KEY = actor_input.get('openai_token')
 
         print("Loading dataset")
 
