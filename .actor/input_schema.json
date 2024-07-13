@@ -15,12 +15,26 @@
       "description": "The pinecone index namespace.",
       "editor": "textfield"
     },
+    "pinecone_token": {
+      "title": "Pinecone token",
+      "description": "Pinecone token",
+      "type": "string",
+      "editor": "textfield",
+      "isSecret": true
+    },
     "pinecone_env": {
       "title": "Pinecone env",
       "description": "Pinecone enviorment",
       "type": "string",
       "editor": "textfield",
       "isSecret": false
+    },
+    "openai_token": {
+      "title": "OpenAI token",
+      "description": "OpenAI token",
+      "type": "string",
+      "editor": "textfield",
+      "isSecret": true
     },
     "fields": {
       "title": "Fields",
@@ -47,5 +61,5 @@
       "editor": "json"
     }
   },
-  "required": ["index_name", "pinecone_env", "fields"]
+  "required": ["index_name", "pinecone_token", "pinecone_env", "openai_token", "fields"]
 }
