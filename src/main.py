@@ -150,7 +150,7 @@ async def main():
 
             index = pc.Index(index_name)
 
-            dense_model = OpenAIEmbeddings(model='text-embedding-3-small')
+            dense_model = OpenAIEmbeddings(model='text-embedding-3-small', dimensions='768')
 
             # Define builder function
             def builder(records: list):
