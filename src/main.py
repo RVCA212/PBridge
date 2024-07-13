@@ -15,6 +15,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pinecone import Pinecone as PineconeClient
 from pinecone_text.sparse import SpladeEncoder
 from sentence_transformers import SentenceTransformer
+from transformers import AutoTokenizer
 
 
 def get_nested_value(data_dict, keys_str):
@@ -139,6 +140,8 @@ async def main():
         
         splade = SpladeEncoder()
         sparse_model_id = splade
+
+        tokenizer = AutoTokenizer.from_pretrained(sparse_model_id)
 
         print("sparse model loaded")
 
