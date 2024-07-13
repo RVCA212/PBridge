@@ -5,9 +5,10 @@ import time
 from apify import Actor
 from tqdm.auto import tqdm
 from pinecone import ServerlessSpec
-from langchain.docstore.document import Document
+from langchain_core.documents import Document
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders import ApifyDatasetLoader
 from pinecone import Pinecone as PineconeClient
 from pinecone_text.sparse import BM25Encoder
 
