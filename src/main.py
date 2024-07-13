@@ -11,36 +11,38 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from pinecone import Pinecone as PineconeClient
 from pinecone_text.sparse import BM25Encoder
 
-# def get_nested_value(data_dict, keys_str):
-#     keys = keys_str.split('.')
-#     result = data_dict
+def get_nested_value(data_dict, keys_str):
+    keys = keys_str.split('.')
+    result = data_dict
 
-#     for key in keys:
-#         if key in result:
-#             result = result[key]
-#         else:
-#             # If any of the keys are not found, return None
-#             return None
+    for key in keys:
+        if key in result:
+            result = result[key]
+        else:
+            # If any of the keys are not found, return None
+            return None
 
-#     return result
+    return result
 
 
 async def main():
     async with Actor:
-        actor_input: dict = await Actor.get_input() or {}
-        Actor.log.info(actor_input)
+
+        # Get the value of the actor input
+        actor_input = await Actor.get_input() or {}
 
         print("Actor Input:", actor_input)
 
-        OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-
-        PINECONE_API_KEY = os.environ['OPENAI_API_KEY']
+        os.environ['OPENAI_API_KEY'] = actor_input.get('openai_token')
 
 
         fields = actor_input.get('fields') or []
         metadata_fields = actor_input.get('metadata_fields') or {}
         metadata_values = actor_input.get('metadata_values') or {}
+
+        PINECONE_API_KEY = actor_input.get('pinecone_token')
         PINECONE_ENV = actor_input.get('pinecone_env')
+        OPENAI_API_KEY = actor_input.get('openai_token')
 
         print("Loading dataset")
 
