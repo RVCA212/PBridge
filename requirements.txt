@@ -51,6 +51,7 @@ sentence-transformers
 SQLAlchemy==2.0.12
 tenacity==8.2.2
 tiktoken
+transformers
 pinecone-text[splade]
 tqdm==4.65.0
 typing-inspect==0.8.0
