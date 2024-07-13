@@ -201,7 +201,7 @@ async def main():
                 padding=True, truncation=True
             )
             with torch.no_grad():
-                sparse_vecs = sparse_model(
+                sparse_vecs = sparse_model_id(
                     d_kwargs=input_ids.to(device)
                 )["d_rep"].squeeze()
 
