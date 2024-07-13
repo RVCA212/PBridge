@@ -25,7 +25,6 @@ def get_nested_value(data_dict, keys_str):
 
     return result
 
-
 async def main():
     async with Actor:
         try:
@@ -94,6 +93,15 @@ async def main():
             documents = loader.load()
             print("docs loaded")
 
+            # Collect all markdown content for BM25 fitting
+            all_markdown_content = [doc.page_content for doc in documents]
+
+            # Fit BM25 model on the collected markdown content
+            bm25_encoder = BM25Encoder()
+            bm25_encoder.fit(all_markdown_content)
+            bm25_encoder.dump("bm25_values.json")
+            bm25_encoder = BM25Encoder().load("bm25_values.json")
+
             # Split documents into chunks
             parent_child_documents = []
             for doc_id, doc in enumerate(documents):
@@ -141,8 +149,6 @@ async def main():
                 print(f"Index {index_name} already exists")
 
             index = pc.Index(index_name)
-
-            bm25_encoder = BM25Encoder()
 
             dense_model = OpenAIEmbeddings(model='text-embedding-3-small')
 
