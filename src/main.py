@@ -117,7 +117,7 @@ async def main():
                         parent_child_documents.append(
                             {
                                 "parent_content": parent_chunk,
-                                "child_content": child_chunk,
+                                "context": child_chunk,
                                 "metadata": {
                                     "source": doc.metadata["source"],
                                     "doc_id": doc_id,
@@ -154,7 +154,7 @@ async def main():
 
             # Define builder function
             def builder(records: list):
-                child_contents = [x["child_content"] for x in records]
+                child_contents = [x["context"] for x in records]
                 dense_vecs = dense_model.embed_documents(child_contents)
                 sparse_vecs = bm25_encoder.encode_documents(child_contents)
 
@@ -165,7 +165,8 @@ async def main():
                         "sparse_values": sparse_vec,
                         "metadata": {
                             **record["metadata"],
-                            "child_content": record["child_content"],
+                            "source": source,
+                            "context": record["context"],
                             "parent_content": record["parent_content"]
                         }
                     }
