@@ -26,21 +26,6 @@ def get_nested_value(data_dict, keys_str):
             return None
 
     return result
-
-# New function to use the external API for chunking
-def api_chunker(text):
-    url = 'https://tokenize.jina.ai/'
-    headers = {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer jina_490ca1f3cb034bc3b46f6c48c9dffe3a7iohaL0AIUlTFayjEHx3wT_WREOa'
-    }
-    data = {
-        "content": text,
-        "tokenizer": "o200k_base",
-        "return_chunks": "true"
-    }
-    response = requests.post(url, headers=headers, json=data)
-    return response.json().get('chunks', [])
     
 
 async def main():
@@ -52,6 +37,8 @@ async def main():
 
             os.environ['OPENAI_API_KEY'] = actor_input.get('openai_token')
 
+            os.environ['JINA_API_KEY'] = actor_input.get('jina_token')
+
             fields = actor_input.get('fields') or []
             metadata_fields = actor_input.get('metadata_fields') or {}
             metadata_values = actor_input.get('metadata_values') or {}
@@ -61,6 +48,21 @@ async def main():
             OPENAI_API_KEY = actor_input.get('openai_token')
 
             print("Loading dataset")
+
+            # New function to use the external API for chunking
+            def api_chunker(text):
+                url = 'https://tokenize.jina.ai/'
+                headers = {
+                    'Content-Type': 'application/json',
+                    'Authorization': JINA_API_KEY
+                }
+                data = {
+                    "content": text,
+                    "tokenizer": "o200k_base",
+                    "return_chunks": "true"
+                }
+                response = requests.post(url, headers=headers, json=data)
+                return response.json().get('chunks', [])
 
             # Iterator over metadata fields
             for field in metadata_fields:
