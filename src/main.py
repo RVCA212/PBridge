@@ -58,15 +58,45 @@ async def main():
                 url = 'https://tokenize.jina.ai/'
                 headers = {
                     'Content-Type': 'application/json',
-                    'Authorization': JINA_API_KEY
+                    'Authorization': os.environ['JINA_API_KEY']
                 }
                 data = {
                     "content": text,
                     "tokenizer": "o200k_base",
                     "return_chunks": "true"
                 }
-                response = requests.post(url, headers=headers, json=data)
-                return response.json().get('chunks', [])
+                try:
+                    response = requests.post(url, headers=headers, json=data)
+                    response.raise_for_status()  # Raise an exception for bad status codes
+                    return response.json().get('chunks', [])
+                except requests.exceptions.RequestException as e:
+                    print(f"Error making request to JINA API: {e}")
+                    print(f"Response status code: {response.status_code}")
+                    print(f"Response content: {response.text}")
+                    return []  # Return an empty list if there's an error
+                except json.JSONDecodeError as e:
+                    print(f"Error decoding JSON from JINA API: {e}")
+                    print(f"Response content: {response.text}")
+                    return []  # Return an empty list if there's a JSON decoding error
+
+
+
+            def fallback_chunker(text, max_chunk_size=500):
+                words = text.split()
+                chunks = []
+                current_chunk = []
+                current_size = 0
+                for word in words:
+                    if current_size + len(word) > max_chunk_size and current_chunk:
+                        chunks.append(' '.join(current_chunk))
+                        current_chunk = []
+                        current_size = 0
+                    current_chunk.append(word)
+                    current_size += len(word) + 1  # +1 for space
+                if current_chunk:
+                    chunks.append(' '.join(current_chunk))
+                return chunks
+
 
             # Iterator over metadata fields
             for field in metadata_fields:
@@ -126,9 +156,13 @@ async def main():
                 print(type(doc))
                 # First, split document into parent chunks
                 parent_chunks = text_splitter1.split_text(doc.page_content)
+                # In the main function, modify the chunking part:
                 for parent_id, parent_chunk in enumerate(parent_chunks):
-                    # Use the new API-based chunker for child chunks
+                    # Try API chunker first, fall back to simple chunker if it fails
                     child_chunks = api_chunker(parent_chunk)
+                    if not child_chunks:
+                        print("API chunker failed, using fallback chunker")
+                        child_chunks = fallback_chunker(parent_chunk)
                     for child_id, child_chunk in enumerate(child_chunks):
                         # Append parent chunk (larger) and child chunk (smaller) together with metadata
                         parent_child_documents.append(
