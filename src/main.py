@@ -39,6 +39,8 @@ async def main():
 
             os.environ['JINA_API_KEY'] = actor_input.get('jina_token')
 
+            JINA_API_KEY = os.environ['JINA_API_KEY']
+
             fields = actor_input.get('fields') or []
             metadata_fields = actor_input.get('metadata_fields') or {}
             metadata_values = actor_input.get('metadata_values') or {}
