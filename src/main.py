@@ -2,6 +2,7 @@ import os
 import tiktoken
 import hashlib
 import time
+import requests
 from apify import Actor
 from tqdm.auto import tqdm
 from pinecone import ServerlessSpec
@@ -11,6 +12,7 @@ from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import ApifyDatasetLoader
 from pinecone import Pinecone as PineconeClient
 from pinecone_text.sparse import BM25Encoder
+
 
 def get_nested_value(data_dict, keys_str):
     keys = keys_str.split('.')
@@ -24,6 +26,22 @@ def get_nested_value(data_dict, keys_str):
             return None
 
     return result
+
+# New function to use the external API for chunking
+def api_chunker(text):
+    url = 'https://tokenize.jina.ai/'
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer jina_490ca1f3cb034bc3b46f6c48c9dffe3a7iohaL0AIUlTFayjEHx3wT_WREOa'
+    }
+    data = {
+        "content": text,
+        "tokenizer": "o200k_base",
+        "return_chunks": "true"
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response.json().get('chunks', [])
+    
 
 async def main():
     async with Actor:
@@ -75,19 +93,13 @@ async def main():
 
             # Create text splitter based on length function
             text_splitter1 = RecursiveCharacterTextSplitter(
-                chunk_size=8000,
+                chunk_size=5000,
                 chunk_overlap=25,
                 length_function=tiktoken_len,
                 separators=["\n\n", "\n", " ", ""]
             )
 
             bert_limit = 512
-            text_splitter2 = RecursiveCharacterTextSplitter(
-                chunk_size=bert_limit,
-                chunk_overlap=25,
-                length_function=tiktoken_len,
-                separators=["\n\n", "\n", " ", ""]
-            )
 
             # load documents from Apify
             documents = loader.load()
@@ -102,7 +114,6 @@ async def main():
             bm25_encoder.dump("bm25_values.json")
             bm25_encoder = BM25Encoder().load("bm25_values.json")
 
-            # Split documents into chunks
             parent_child_documents = []
             for doc_id, doc in enumerate(documents):
                 print(doc)
@@ -110,8 +121,8 @@ async def main():
                 # First, split document into parent chunks
                 parent_chunks = text_splitter1.split_text(doc.page_content)
                 for parent_id, parent_chunk in enumerate(parent_chunks):
-                    # For each parent chunk, split further into child chunks
-                    child_chunks = text_splitter2.split_text(parent_chunk)
+                    # Use the new API-based chunker for child chunks
+                    child_chunks = api_chunker(parent_chunk)
                     for child_id, child_chunk in enumerate(child_chunks):
                         # Append parent chunk (larger) and child chunk (smaller) together with metadata
                         parent_child_documents.append(
