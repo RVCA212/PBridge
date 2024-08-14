@@ -36,6 +36,13 @@
       "editor": "textfield",
       "isSecret": true
     },
+    "jina_token": {
+      "title": "JINA Bearer token",
+      "description": "JINA Bearer token"",
+      "type": "string",
+      "editor": "textfield",
+      "isSecret": true
+    },
     "fields": {
       "title": "Fields",
       "type": "array",
